@@ -1,19 +1,36 @@
 package com.champ.sa.smarthome;
 
 import android.app.Activity;
+import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+
 
 public class Room3 extends AppCompatActivity {
+    private static final String TAG = Room1.class.getName();
+    private static final String REQUESTTAG = "first string request";
+
     ToggleButton button1;
     ToggleButton button2;
     ToggleButton button3;
     ToggleButton button4;
     ToggleButton button5;
+
+    private RequestQueue lightRequestQueue;
+    private StringRequest stringRequest;
+
+    private String url1 = "http://192.168.225.29/room1.php?lightr3=1";
+    private String url2 = "http://192.168.225.29/room1.php?lightr3=0";
 
 
     @Override
@@ -33,9 +50,33 @@ public class Room3 extends AppCompatActivity {
 
 
                 if (button1.isChecked()) {
-                    Toast.makeText(Room3.this, "Light's ON!", Toast.LENGTH_LONG).show();
+                    final Toast toast = Toast.makeText(getApplicationContext(), "Light's ON!", Toast.LENGTH_SHORT);
+                    toast.show();
+
+                    Handler handler = new Handler();
+                    handler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            toast.cancel();
+                        }
+                    }, 500);
+
+                    sendRequestAndChangeState(url1);
+
                 } else {
-                    Toast.makeText(Room3.this, "Light's OFF!", Toast.LENGTH_LONG).show();
+                    final Toast toast = Toast.makeText(getApplicationContext(), "Light's OFF!", Toast.LENGTH_SHORT);
+                    toast.show();
+
+                    Handler handler = new Handler();
+                    handler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            toast.cancel();
+                        }
+                    }, 500);
+
+                    sendRequestAndChangeState(url2);
+
                 }
             }
 
@@ -96,5 +137,30 @@ public class Room3 extends AppCompatActivity {
             }
 
         });
+    }
+    private void sendRequestAndChangeState(String url) {
+
+        lightRequestQueue = VolleySingleton.getInstance(this.getApplicationContext()).getRequestQueue(this.getApplicationContext());
+        stringRequest = new StringRequest(Request.Method.GET, url, new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+
+                Log.i(TAG, "Error :" + error.toString());
+            }
+        });
+        stringRequest.setTag(REQUESTTAG);
+        lightRequestQueue.add(stringRequest);
+    }
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if (lightRequestQueue != null) {
+            lightRequestQueue.cancelAll(REQUESTTAG);
+
+        }
     }
 }
